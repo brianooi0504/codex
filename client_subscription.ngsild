@@ -1,0 +1,13 @@
+{
+  "id": "urn:subscription:2",
+  "type": "Subscription",
+  "expires": 30,
+  "entities": [{
+                "id": "LinearRegressionTest"
+  }],
+  "watchedAttributes": ["serverModel"],
+  "@context": [
+    "https://smartdatamodels.org/context.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
+    ]
+}
