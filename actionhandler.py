@@ -1087,12 +1087,18 @@ def read_ngsild_file(file_path):
         print(f"Error decoding JSON in '{file_path}': {e}")
         return None
 
-def edit_ngsild_value(ngsild_data, attribute, attribute_index, new_value):
+def edit_ngsild_value(ngsild_data, attribute, attribute_index, value_flag, new_value):
     if ngsild_data and attribute in ngsild_data:
         if attribute_index < 0:
-            ngsild_data[attribute]["value"] = new_value
+            if value_flag:
+                ngsild_data[attribute]["value"] = new_value
+            else:
+                ngsild_data[attribute] = new_value
         else:
-            ngsild_data[attribute]["value"][attribute_index] = new_value
+            if value_flag:
+                ngsild_data[attribute]["value"][attribute_index] = new_value
+            else:
+                ngsild_data[attribute][attribute_index] = new_value
         return True
     else:
         print(f"Error: Attribute '{attribute}' not found in NGSI-LD data.")
@@ -1106,8 +1112,8 @@ def write_ngsild_file(file_path, ngsild_data):
     except json.JSONDecodeError as e:
         print(f"Error encoding JSON to write in '{file_path}': {e}")
 
-def update_ngsild_value(ngsild_data, file_path, edit_attribute, attribute_index, new_value):
-    if ngsild_data and edit_ngsild_value(ngsild_data, edit_attribute, attribute_index, new_value):
+def update_ngsild_value(ngsild_data, file_path, edit_attribute, attribute_index, value_flag, new_value):
+    if ngsild_data and edit_ngsild_value(ngsild_data, edit_attribute, attribute_index, value_flag, new_value):
     # Write the updated NGSI-LD data back to the file
         write_ngsild_file(file_path, ngsild_data)
 
@@ -1824,6 +1830,10 @@ def main(argv):
         # Update NGSI-LD file
         write_ngsild_file(server_model_ngsild_filename, server_model_ngsild_data)
 
+        server_subscription_ngsild_filename = 'server_subscription.ngsild'
+        server_sub_ngsild_data = read_ngsild_file(server_subscription_ngsild_filename)
+        update_ngsild_value(server_sub_ngsild_data, server_subscription_ngsild_filename, "entities", 0, 0, {"id": ngsild_data['modelName']['value']})
+
         # POST SELF ENTITY
         # POST GLOBAL MODEL
         print("\n-- POSTING SERVER INFORMATION --\n")
@@ -1991,8 +2001,8 @@ def main(argv):
                 
                 # Update NGSI-LD file
                 # update_ngsild_value(ngsild_data, file, 'weightSizes', [global_model.fc.shape])
-                update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 5, server_training_iteration)
-                update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 6, global_model.fc.tolist())
+                update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 5, 1, server_training_iteration)
+                update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 6, 1, global_model.fc.tolist())
 
                 # POST SELF ENTITY
                 # POST GLOBAL MODEL
@@ -2067,6 +2077,10 @@ def main(argv):
         
         # Update NGSI-LD file
         write_ngsild_file(client_model_ngsild_filename, client_model_ngsild_data)
+
+        client_subscription_ngsild_filename = 'client_subscription.ngsild'
+        client_sub_ngsild_data = read_ngsild_file(client_subscription_ngsild_filename)
+        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": ngsild_data['modelName']['value']})
 
         if client_sharing: 
             # POST SELF ENTITY
@@ -2210,9 +2224,9 @@ def main(argv):
                 print('Client model weights:', client_model.fc)
 
                 # Update NGSI-LD file
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 5, clientModelIteration)
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 6, client_datapoints)
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 7, client_model.fc.tolist())
+                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 5, 1, clientModelIteration)
+                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 6, 1, client_datapoints)
+                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 7, 1, client_model.fc.tolist())
 
                 if client_sharing:
                     # POST SELF ENTITY
