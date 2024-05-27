@@ -1801,22 +1801,27 @@ def main(argv):
 
         global_model = Model()
 
+        client_iter_pairs = {}
+
         server_training_iteration = 1
 
         # Read NGSI-LD file
         ngsild_data = read_ngsild_file(file)
+        model_type = ngsild_data['modelType']['value']
+        model_id = ngsild_data['modelName']['value']
+        model_weights = ngsild_data['weightSizes']['value']
 
         server_model_ngsild_data = {
-            "id":ngsild_data['modelName']['value'], 
-            "type":ngsild_data['modelType']['value'],
+            "id":model_id, 
+            "type":model_type,
             "serverModel":{
                 "type": "Property",
                 "value": [
                         ngsild_data['id'],
                         ngsild_data['type'],
-                        ngsild_data['modelName']['value'],
-                        ngsild_data['modelType']['value'],
-                        ngsild_data['weightSizes']['value'],
+                        model_id,
+                        model_type,
+                        model_weights,
                         server_training_iteration, 
                         global_model.fc.tolist()
                     ]
@@ -1834,7 +1839,7 @@ def main(argv):
 
         server_subscription_ngsild_filename = 'server_subscription.ngsild'
         server_sub_ngsild_data = read_ngsild_file(server_subscription_ngsild_filename)
-        update_ngsild_value(server_sub_ngsild_data, server_subscription_ngsild_filename, "entities", 0, 0, {"id": ngsild_data['modelName']['value']})
+        update_ngsild_value(server_sub_ngsild_data, server_subscription_ngsild_filename, "entities", 0, 0, {"id": model_id})
 
         # POST SELF ENTITY
         # POST GLOBAL MODEL
@@ -1859,9 +1864,22 @@ def main(argv):
             while not queue.empty():
                 temp_client_model = queue.get()
                 print('iterations', temp_client_model['iteration'], server_training_iteration)
+
+                if temp_client_model['modelType'] != model_type and temp_client_model['modelName'] != model_id:
+                    continue
                 
-                if temp_client_model['modelType'] == ngsild_data['modelType']['value'] and temp_client_model['modelName'] == ngsild_data['modelName']['value'] and temp_client_model['iteration'] == server_training_iteration:
+                if temp_client_model['id'] not in client_iter_pairs:
+                    # Client iteration 0 - introduction to server
+                    client_iter_pairs[temp_client_model['id']] = temp_client_model['iteration']
+                elif client_iter_pairs[temp_client_model['id']] == temp_client_model['iteration']:
+                    continue
+                else:
+                    client_iter_pairs[temp_client_model['id']] = temp_client_model['iteration']
+                
+                if temp_client_model['iteration'] == server_training_iteration:
                     client_models.append(temp_client_model)
+
+                # print('client_iter pairs: ', client_iter_pairs)
 
             if len(client_models) > 0:
             
@@ -1870,7 +1888,7 @@ def main(argv):
 
                 # AGGREGATE MODEL
                 # Model aggregation
-                print('Client models: ', client_models)
+                # print('Client models: ', client_models)
 
                 aggregated_model = Model(random=False)
                 for client_model in client_models:
