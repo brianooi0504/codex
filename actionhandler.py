@@ -1966,18 +1966,21 @@ def main(argv):
 
         # Read NGSI-LD file
         ngsild_data = read_ngsild_file(file)
+        model_type = ngsild_data['modelType']['value']
+        model_id = ngsild_data['modelName']['value']
+        model_weights = ngsild_data['weightSizes']['value']
 
         client_model_ngsild_data = {
-            "id":ngsild_data['modelName']['value'], 
-            "type":ngsild_data['modelType']['value'],
+            "id":model_id, 
+            "type":model_type,
             "clientModel":{
                 "type": "Property",
                 "value": [
                         ngsild_data['id'],
                         ngsild_data['type'],
-                        ngsild_data['modelName']['value'],
-                        ngsild_data['modelType']['value'],
-                        ngsild_data['weightSizes']['value'],
+                        model_id,
+                        model_type,
+                        model_weights,
                         clientModelIteration,
                         client_datapoints,
                         client_model.fc.tolist()
@@ -1996,7 +1999,7 @@ def main(argv):
 
         client_subscription_ngsild_filename = 'client_subscription.ngsild'
         client_sub_ngsild_data = read_ngsild_file(client_subscription_ngsild_filename)
-        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": ngsild_data['modelName']['value']})
+        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": model_id})
 
         if client_sharing: 
             # POST SELF ENTITY
@@ -2020,7 +2023,7 @@ def main(argv):
             while not queue.empty():
                 temp_server_model = queue.get()
 
-                if temp_server_model['modelType'] == ngsild_data['modelType']['value'] and temp_server_model['modelName'] == ngsild_data['modelName']['value'] and temp_server_model['iteration'] > max_server_iter:
+                if temp_server_model['modelType'] == model_type and temp_server_model['modelName'] == model_id and temp_server_model['iteration'] > max_server_iter:
                     server_model = temp_server_model
                     max_server_iter = temp_server_model['iteration']
 
