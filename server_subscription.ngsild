@@ -4,7 +4,7 @@
   "expires": 60,
   "entities": [
     {
-      "id": "LinearRegressionTest2"
+      "id": "LinearRegressionTest"
     }
   ],
   "watchedAttributes": [

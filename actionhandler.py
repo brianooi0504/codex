@@ -2204,6 +2204,7 @@ def main(argv):
             # PROCESS RECEIVED SERVER DATA
 
             max_server_iter = float('-inf')
+            server_model = None
 
             while not queue.empty():
                 temp_server_model = queue.get()
@@ -2212,30 +2213,33 @@ def main(argv):
                     server_model = temp_server_model
                     max_server_iter = temp_server_model['iteration']
 
-            if server_model['iteration'] >= clientModelIteration or first_training_iter:
-                clientModelIteration = server_model['iteration']
-                print('Client is training iteration', clientModelIteration)
+            if server_model:
+                if server_model['iteration'] >= clientModelIteration or first_training_iter:
+                    clientModelIteration = server_model['iteration']
+                    print('Client is training iteration', clientModelIteration)
 
-                # -- TRAIN MODEL
-                client_model.fc = np.array(server_model['weights'])
-                client_model, cost = train_local_model(client_model)
+                    # -- TRAIN MODEL
+                    client_model.fc = np.array(server_model['weights'])
+                    client_model, cost = train_local_model(client_model)
 
-                print('Client training cost:', cost)
-                print('Client model weights:', client_model.fc)
+                    print('Client training cost:', cost)
+                    print('Client model weights:', client_model.fc)
 
-                # Update NGSI-LD file
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 5, 1, clientModelIteration)
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 6, 1, client_datapoints)
-                update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 7, 1, client_model.fc.tolist())
+                    # Update NGSI-LD file
+                    update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 5, 1, clientModelIteration)
+                    update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 6, 1, client_datapoints)
+                    update_ngsild_value(client_model_ngsild_data, client_model_ngsild_filename, 'clientModel', 7, 1, client_model.fc.tolist())
 
-                if client_sharing:
-                    # POST SELF ENTITY
-                    post_entity(client_model_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
+                    if client_sharing:
+                        # POST SELF ENTITY
+                        post_entity(client_model_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
-                clientModelIteration += 1
-                first_training_iter = False
+                    clientModelIteration += 1
+                    first_training_iter = False
+                else:
+                    print("No training for this iteration")
             else:
-                print("No training for this iteration")
+                print("No Server model received")
 
 #Check if the script is being run directly
 #Retrieve command-line arguments passed to the script
