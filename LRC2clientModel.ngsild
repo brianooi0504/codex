@@ -1,0 +1,36 @@
+{
+  "id": "LinearRegressionTest",
+  "type": "LinearRegression",
+  "clientModel": {
+    "type": "Property",
+    "value": [
+      "urn:ngsi-ld:LinRegClient:LRC2",
+      "LinRegClient",
+      "LinearRegressionTest",
+      "LinearRegression",
+      [
+        [
+          10
+        ]
+      ],
+      3,
+      134,
+      [
+        17.211864670475908,
+        0.05212368688306978,
+        0.7594714182873924,
+        1.1069146172445121,
+        1.0279955440801063,
+        0.10139194609390498,
+        0.8136059072175349,
+        1.9537299713095568,
+        0.18395476894664736,
+        0.7418416857071644
+      ]
+    ]
+  },
+  "@context": [
+    "https://smartdatamodels.org/context.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
+  ]
+}
