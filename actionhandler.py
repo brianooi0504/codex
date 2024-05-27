@@ -154,6 +154,117 @@ def post_entity(data,my_area,broker,port,qos,my_loc,bypass_existence_check=0,cli
         print(special_context_provider_broadcast)        
     client.loop_stop()
 
+def post_subscriptions(file,my_area,broker,port,qos,server_client_flag=0,queue=None):
+    truetype=''
+    true_id=''
+    trueid2=''
+    topic=[]
+    entity_type_flag=False
+    watched_attributes_flag=False
+    entity_id_flag=False
+    watched_attributes=''
+    server_area_flag=False
+    if file=='':
+        usage()
+        sys.exit(2)
+    print("\nngsild Post Subscription command detected\n")
+    with open(file) as json_file:
+        try:
+            data = json.load(json_file)
+        except:
+            print("Can't parse the input file, are you sure it is valid json?")
+            sys.exit(2)
+            
+        if 'type' in data:
+            typee=str(data['type'])
+            if typee!="Subscription":
+                print('Subscription has invalid type: '+typee)
+                sys.exit(2)
+        else:
+            print("Error, ngsi-ld Subscription without a type \n")
+            sys.exit(2)
+        if 'id' in data:
+            id=str(data['id'])
+        else:
+            print("Error, ngsi-ld Subscription without a id \n")
+            sys.exit(2)
+        if '@context' in data:
+            if( str(type(data["@context"]))=="<class 'str'>"):
+                context=data['@context'].replace("/", "§")
+            else:
+                context=data['@context'][0].replace("/", "§")
+        else:
+            context='+'    
+        if 'entities' in data:
+            info_entities=data['entities'][0]
+            if 'type' in info_entities:
+                truetype=str(info_entities["type"])
+                entity_type_flag=True
+            if 'id' in info_entities:
+                true_id=str(info_entities["id"])
+                entity_id_flag=True   
+        if 'watchedAttributes' in data:
+            watched_attributes=data['watchedAttributes']
+            print(watched_attributes)
+            watched_attributes_flag=True
+            if watched_attributes == None:
+                print("Watched attributes without content, exiting....")
+                sys.exit(2)
+        # if 'expires' in data:
+        #     expires=int(data['expires'])       
+
+        if(entity_type_flag==False and watched_attributes_flag==False and entity_id_flag==False):    
+            print("Error, ngsi-ld subscription without information about topics, exiting.... \n")
+            sys.exit(2)    
+
+
+        big_topic=my_area+'/Subscriptions/'+context+'/'+typee+'/LNA/'+id     
+
+        print("creating new instance")
+        client1 = mqtt.Client(clean_session=True) #create new instance
+        client1.on_message=on_message #attach function to callback
+        print("connecting to broker")
+        client1.connect(broker,port) #connect to broker
+        client1.loop_start() #start the loop
+        print("Publishing message to topic")
+        client1.publish(big_topic,str(data),qos=qos)
+        client1.loop_stop() #stop the loop
+
+        area=[]
+
+        if 'area' in data:
+            area=data['area']
+        else:
+            area.append('+')
+
+        if(truetype==''):
+            truetype2='#'
+            truetype='+'
+        else:
+            truetype2=truetype
+        
+        if(true_id==''):
+            trueid2='#'
+        else:
+            trueid2=true_id    
+
+        messages_for_context=[]
+        check_top=[]
+
+        
+        for z in area: 
+            if(singleidadvertisement==False):
+                check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype2
+            else:
+                check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype+'/'+trueid2  
+            print(check_topic2)
+            
+            check_top.append(check_topic2)
+        
+        print(check_top)
+        subscribe_for_advertisement_notification(broker,port,check_top,expires,qos,entity_type_flag,watched_attributes_flag,entity_id_flag,watched_attributes,true_id,server_client_flag,queue)
+    
+        #print(data)
 
 #Description: This function checks if an entity or advertisement already exists inside the broker.
 #Parameters:
@@ -1126,6 +1237,7 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
+    global singleidadvertisement, queue, my_area, qos, broker, port, expires
     command=''
     file=''
     data_file=''
@@ -1136,7 +1248,6 @@ def main(argv):
     broker=default_broker_adress
     port=default_broker_port
     expires= 3600
-    global singleidadvertisement
     queue = multiprocessing.Queue()
     client_fraction = 0
     num_rounds = 1000
@@ -1218,116 +1329,7 @@ def main(argv):
        
     #CREATION OF SUBSRIPTIONS        
     elif command=='POST/Subscriptions':
-        truetype=''
-        true_id=''
-        trueid2=''
-        topic=[]
-        entity_type_flag=False
-        watched_attributes_flag=False
-        entity_id_flag=False
-        watched_attributes=''
-        server_area_flag=False
-        if file=='':
-            usage()
-            sys.exit(2)
-        print("\nngsild Post Subscription command detected\n")
-        with open(file) as json_file:
-            try:
-                data = json.load(json_file)
-            except:
-                print("Can't parse the input file, are you sure it is valid json?")
-                sys.exit(2)
-                
-            if 'type' in data:
-                typee=str(data['type'])
-                if typee!="Subscription":
-                    print('Subscription has invalid type: '+typee)
-                    sys.exit(2)
-            else:
-                print("Error, ngsi-ld Subscription without a type \n")
-                sys.exit(2)
-            if 'id' in data:
-                id=str(data['id'])
-            else:
-                print("Error, ngsi-ld Subscription without a id \n")
-                sys.exit(2)
-            if '@context' in data:
-                if( str(type(data["@context"]))=="<class 'str'>"):
-                    context=data['@context'].replace("/", "§")
-                else:
-                    context=data['@context'][0].replace("/", "§")
-            else:
-                context='+'    
-            if 'entities' in data:
-                info_entities=data['entities'][0]
-                if 'type' in info_entities:
-                    truetype=str(info_entities["type"])
-                    entity_type_flag=True
-                if 'id' in info_entities:
-                    true_id=str(info_entities["id"])
-                    entity_id_flag=True   
-            if 'watchedAttributes' in data:
-                watched_attributes=data['watchedAttributes']
-                print(watched_attributes)
-                watched_attributes_flag=True
-                if watched_attributes == None:
-                    print("Watched attributes without content, exiting....")
-                    sys.exit(2)
-            if 'expires' in data:
-                expires=int(data['expires'])       
-
-            if(entity_type_flag==False and watched_attributes_flag==False and entity_id_flag==False):    
-                print("Error, ngsi-ld subscription without information about topics, exiting.... \n")
-                sys.exit(2)    
-
-
-            big_topic=my_area+'/Subscriptions/'+context+'/'+typee+'/LNA/'+id     
-
-            print("creating new instance")
-            client1 = mqtt.Client(clean_session=True) #create new instance
-            client1.on_message=on_message #attach function to callback
-            print("connecting to broker")
-            client1.connect(broker,port) #connect to broker
-            client1.loop_start() #start the loop
-            print("Publishing message to topic")
-            client1.publish(big_topic,str(data),qos=qos)
-            client1.loop_stop() #stop the loop
-
-            area=[]
-
-            if 'area' in data:
-                area=data['area']
-            else:
-                area.append('+')
-
-            if(truetype==''):
-                truetype2='#'
-                truetype='+'
-            else:
-                truetype2=truetype
-            
-            if(true_id==''):
-                trueid2='#'
-            else:
-                trueid2=true_id    
-
-            messages_for_context=[]
-            check_top=[]
-
-            
-            for z in area: 
-                if(singleidadvertisement==False):
-                    check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype2
-                else:
-                    check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype+'/'+trueid2  
-                print(check_topic2)
-                
-                check_top.append(check_topic2)
-            
-            print(check_top)
-            subscribe_for_advertisement_notification(broker,port,check_top,expires,qos,entity_type_flag,watched_attributes_flag,entity_id_flag,watched_attributes,true_id)
-             
-                #print(data)
+        post_subscriptions(file,my_area,broker,port,qos)
 
     elif(re.search("DELETE/entities/",command)):
         #print("FOUND THE DELETE COMMAND!!!")
@@ -1847,114 +1849,9 @@ def main(argv):
 
             # SUBSCRIBE
             # Post subscription to modelIterDpWeights
-            truetype=''
-            true_id=''
-            trueid2=''
-            topic=[]
-            entity_type_flag=False
-            watched_attributes_flag=False
-            entity_id_flag=False
-            watched_attributes=''
-            server_area_flag=False
-            server_sub_file='server_subscription.ngsild'
-            print("\n-- SUBSCRIBING TO CLIENT INFORMATION --\n")
+            # final server_client_flag attr: 1 - server, 2 - client
+            post_subscriptions(file,my_area,broker,port,qos,1,queue)
             
-            with open(server_sub_file) as json_file:
-                try:
-                    data = json.load(json_file)
-                except:
-                    print("Can't parse the input file, are you sure it is valid json?")
-                    sys.exit(2)
-                    
-                if 'type' in data:
-                    typee=str(data['type'])
-                    if typee!="Subscription":
-                        print('Subscription has invalid type: '+typee)
-                        sys.exit(2)
-                else:
-                    print("Error, ngsi-ld Subscription without a type \n")
-                    sys.exit(2)
-                if 'id' in data:
-                    id=str(data['id'])
-                else:
-                    print("Error, ngsi-ld Subscription without a id \n")
-                    sys.exit(2)
-                if '@context' in data:
-                    if( str(type(data["@context"]))=="<class 'str'>"):
-                        context=data['@context'].replace("/", "§")
-                    else:
-                        context=data['@context'][0].replace("/", "§")
-                else:
-                    context='+'    
-                if 'entities' in data:
-                    info_entities=data['entities'][0]
-                    if 'type' in info_entities:
-                        truetype=str(info_entities["type"])
-                        entity_type_flag=True
-                    if 'id' in info_entities:
-                        true_id=str(info_entities["id"])
-                        entity_id_flag=True   
-                if 'watchedAttributes' in data:
-                    watched_attributes=data['watchedAttributes']
-                    print(watched_attributes)
-                    watched_attributes_flag=True
-                    if watched_attributes == None:
-                        print("Watched attributes without content, exiting....")
-                        sys.exit(2)
-                if 'expires' in data:
-                    expires=int(data['expires'])       
-
-                if(entity_type_flag==False and watched_attributes_flag==False and entity_id_flag==False):    
-                    print("Error, ngsi-ld subscription without information about topics, exiting.... \n")
-                    sys.exit(2)    
-
-
-                big_topic=my_area+'/Subscriptions/'+context+'/'+typee+'/LNA/'+id     
-
-                print("creating new instance")
-                client1 = mqtt.Client(clean_session=True) #create new instance
-                client1.on_message=on_message #attach function to callback
-                print("connecting to broker")
-                client1.connect(broker,port) #connect to broker
-                client1.loop_start() #start the loop
-                print("Publishing message to topic")
-                client1.publish(big_topic,str(data),qos=qos)
-                client1.loop_stop() #stop the loop
-
-                area=[]
-
-                if 'area' in data:
-                    area=data['area']
-                else:
-                    area.append('+')
-
-                if(truetype==''):
-                    truetype2='#'
-                    truetype='+'
-                else:
-                    truetype2=truetype
-                
-                if(true_id==''):
-                    trueid2='#'
-                else:
-                    trueid2=true_id    
-
-                messages_for_context=[]
-                check_top=[]
-
-                
-                for z in area: 
-                    if(singleidadvertisement==False):
-                        check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype2
-                    else:
-                        check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype+'/'+trueid2  
-                    print(check_topic2)
-                    
-                    check_top.append(check_topic2)
-                
-                print(check_top)
-                # final server_client_flag attr: 1 - server, 2 - client
-                subscribe_for_advertisement_notification(broker,port,check_top,expires,qos,entity_type_flag,watched_attributes_flag,entity_id_flag,watched_attributes,true_id, 1, queue)
             
             # PROCESS RECEIVED CLIENT DATA
 
@@ -2092,114 +1989,8 @@ def main(argv):
 
             # SUBSCRIBE
             # Post subscription to modelIterWeights
-            truetype=''
-            true_id=''
-            trueid2=''
-            topic=[]
-            entity_type_flag=False
-            watched_attributes_flag=False
-            entity_id_flag=False
-            watched_attributes=''
-            server_area_flag=False
-            client_sub_file='client_subscription.ngsild'
-            print("\n-- SUBSCRIBING TO SERVER INFORMATION --\n")
-            
-            with open(client_sub_file) as json_file:
-                try:
-                    data = json.load(json_file)
-                except:
-                    print("Can't parse the input file, are you sure it is valid json?")
-                    sys.exit(2)
-                    
-                if 'type' in data:
-                    typee=str(data['type'])
-                    if typee!="Subscription":
-                        print('Subscription has invalid type: '+typee)
-                        sys.exit(2)
-                else:
-                    print("Error, ngsi-ld Subscription without a type \n")
-                    sys.exit(2)
-                if 'id' in data:
-                    id=str(data['id'])
-                else:
-                    print("Error, ngsi-ld Subscription without a id \n")
-                    sys.exit(2)
-                if '@context' in data:
-                    if( str(type(data["@context"]))=="<class 'str'>"):
-                        context=data['@context'].replace("/", "§")
-                    else:
-                        context=data['@context'][0].replace("/", "§")
-                else:
-                    context='+'    
-                if 'entities' in data:
-                    info_entities=data['entities'][0]
-                    if 'type' in info_entities:
-                        truetype=str(info_entities["type"])
-                        entity_type_flag=True
-                    if 'id' in info_entities:
-                        true_id=str(info_entities["id"])
-                        entity_id_flag=True   
-                if 'watchedAttributes' in data:
-                    watched_attributes=data['watchedAttributes']
-                    print(watched_attributes)
-                    watched_attributes_flag=True
-                    if watched_attributes == None:
-                        print("Watched attributes without content, exiting....")
-                        sys.exit(2)
-                if 'expires' in data:
-                    expires=int(data['expires'])       
-
-                if(entity_type_flag==False and watched_attributes_flag==False and entity_id_flag==False):    
-                    print("Error, ngsi-ld subscription without information about topics, exiting.... \n")
-                    sys.exit(2)    
-
-
-                big_topic=my_area+'/Subscriptions/'+context+'/'+typee+'/LNA/'+id     
-
-                print("creating new instance")
-                client1 = mqtt.Client(clean_session=True) #create new instance
-                client1.on_message=on_message #attach function to callback
-                print("connecting to broker")
-                client1.connect(broker,port) #connect to broker
-                client1.loop_start() #start the loop
-                print("Publishing message to topic")
-                client1.publish(big_topic,str(data),qos=qos)
-                client1.loop_stop() #stop the loop
-
-                area=[]
-
-                if 'area' in data:
-                    area=data['area']
-                else:
-                    area.append('+')
-
-                if(truetype==''):
-                    truetype2='#'
-                    truetype='+'
-                else:
-                    truetype2=truetype
-                
-                if(true_id==''):
-                    trueid2='#'
-                else:
-                    trueid2=true_id    
-
-                messages_for_context=[]
-                check_top=[]
-
-                
-                for z in area: 
-                    if(singleidadvertisement==False):
-                        check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype2
-                    else:
-                        check_topic2="provider/+/+/"+z+'/'+context+'/'+truetype+'/'+trueid2  
-                    print(check_topic2)
-                    
-                    check_top.append(check_topic2)
-                
-                print(check_top)
-                # final server_client_flag attr: 1 - server, 2 - client
-                subscribe_for_advertisement_notification(broker,port,check_top,expires,qos,entity_type_flag,watched_attributes_flag,entity_id_flag,watched_attributes,true_id, 2, queue)
+            # final server_client_flag attr: 1 - server, 2 - client
+            post_subscriptions(file,my_area,broker,port,qos,2,queue)
 
             # PROCESS RECEIVED SERVER DATA
 
