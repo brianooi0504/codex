@@ -210,8 +210,8 @@ def post_subscriptions(file,my_area,broker,port,qos,server_client_flag=0,queue=N
             if watched_attributes == None:
                 print("Watched attributes without content, exiting....")
                 sys.exit(2)
-        # if 'expires' in data:
-        #     expires=int(data['expires'])       
+        if 'expires' in data:
+            expires=int(data['expires'])       
 
         if(entity_type_flag==False and watched_attributes_flag==False and entity_id_flag==False):    
             print("Error, ngsi-ld subscription without information about topics, exiting.... \n")
@@ -1850,8 +1850,9 @@ def main(argv):
             # SUBSCRIBE
             # Post subscription to modelIterDpWeights
             # final server_client_flag attr: 1 - server, 2 - client
-            post_subscriptions(file,my_area,broker,port,qos,1,queue)
-            
+            server_sub_file='server_subscription.ngsild'
+            post_subscriptions(server_sub_file,my_area,broker,port,qos,1,queue)
+
             
             # PROCESS RECEIVED CLIENT DATA
 
@@ -1990,7 +1991,8 @@ def main(argv):
             # SUBSCRIBE
             # Post subscription to modelIterWeights
             # final server_client_flag attr: 1 - server, 2 - client
-            post_subscriptions(file,my_area,broker,port,qos,2,queue)
+            client_sub_file='client_subscription.ngsild'
+            post_subscriptions(client_sub_file,my_area,broker,port,qos,2,queue)
 
             # PROCESS RECEIVED SERVER DATA
 
