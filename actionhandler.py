@@ -9,7 +9,9 @@
 
 # For more information and updates, visit: [https://github.com/SAMSGBLab/ComDeX]
 
+import copy
 from pickle import TRUE
+import random
 import sys
 import json
 import getopt
@@ -1249,7 +1251,7 @@ def main(argv):
     port=default_broker_port
     expires= 3600
     queue = multiprocessing.Queue()
-    client_fraction = 0
+    client_fraction = 1
     num_rounds = 1000
     my_area="unknown_area"
     my_loc="unknown_location"
@@ -1855,8 +1857,7 @@ def main(argv):
             # SUBSCRIBE
             # Post subscription to modelIterDpWeights
             # final server_client_flag attr: 1 - server, 2 - client
-            server_sub_file='server_subscription.ngsild'
-            post_subscriptions(server_sub_file,my_area,broker,port,qos,1,queue)
+            post_subscriptions(server_subscription_ngsild_filename,my_area,broker,port,qos,1,queue)
 
             
             # PROCESS RECEIVED CLIENT DATA
@@ -1915,7 +1916,7 @@ def main(argv):
 
                 server_training_iteration += 1
                 
-                # Update NGSI-LD file
+                # Update global NGSI-LD file
                 # update_ngsild_value(ngsild_data, file, 'weightSizes', [global_model.fc.shape])
                 update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 5, 1, server_training_iteration)
                 update_ngsild_value(server_model_ngsild_data, server_model_ngsild_filename, 'serverModel', 6, 1, global_model.fc.tolist())
@@ -1923,9 +1924,34 @@ def main(argv):
                 # POST SELF ENTITY
                 # POST GLOBAL MODEL
                 post_entity(server_model_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
-                
+
             else:
                 print("No training for this iteration")
+
+            if len(client_iter_pairs) > 0:
+                # CLIENT SELECTION
+                # Random selection
+                print("\n-- SELECTING CLIENTS --\n")
+                num_clients_selected = max(1, round(len(client_iter_pairs) * client_fraction))
+
+                print('num selected', num_clients_selected)
+
+                clients_list = list(client_iter_pairs.keys())
+                selected_clients = random.sample(clients_list, num_clients_selected)
+
+                print('selected:', selected_clients)
+
+                for selected_client in selected_clients:
+                    client_training_ngsild_filename = selected_client[-4:]+'_training.ngsild'
+
+                    client_training_ngsild_data = copy.deepcopy(server_model_ngsild_data)
+                    
+                    # write_ngsild_file(client_training_ngsild_filename, client_training_ngsild_data)
+
+                    update_ngsild_value(client_training_ngsild_data, client_training_ngsild_filename, 'id', -1, 0, selected_client[-4:]+'_training')
+
+                    post_entity(client_training_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
+
 
         print(costs)
 
@@ -1997,9 +2023,19 @@ def main(argv):
         # Update NGSI-LD file
         write_ngsild_file(client_model_ngsild_filename, client_model_ngsild_data)
 
-        client_subscription_ngsild_filename = 'client_subscription.ngsild'
-        client_sub_ngsild_data = read_ngsild_file(client_subscription_ngsild_filename)
-        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": model_id})
+        sub_filename = 'client_subscription.ngsild'
+        sub_ngsild_data = read_ngsild_file(sub_filename)
+
+        client_sub_ngsild_data = copy.deepcopy(sub_ngsild_data)
+        
+        client_subscription_ngsild_filename = ngsild_data['id'][-4:] + '_subscription.ngsild'
+
+        if client_sharing:
+            subscribed_topic = ngsild_data['id'][-4:]+'_training'
+        else:
+            subscribed_topic = model_id
+
+        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": subscribed_topic})
 
         if client_sharing: 
             # POST SELF ENTITY
@@ -2012,8 +2048,7 @@ def main(argv):
             # SUBSCRIBE
             # Post subscription to modelIterWeights
             # final server_client_flag attr: 1 - server, 2 - client
-            client_sub_file='client_subscription.ngsild'
-            post_subscriptions(client_sub_file,my_area,broker,port,qos,2,queue)
+            post_subscriptions(client_subscription_ngsild_filename,my_area,broker,port,qos,2,queue)
 
             # PROCESS RECEIVED SERVER DATA
 
