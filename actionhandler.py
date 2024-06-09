@@ -1235,7 +1235,7 @@ def update_ngsild_value(ngsild_data, file_path, edit_attribute, attribute_index,
 def main(argv):
     #command line arguments check
     try:
-        opts, args = getopt.getopt(argv,"hc:f:b:p:l:q:H:A:df:fr:r:cs:",["command=","file=","broker_address=","port=","qos=","HLink=","singleidadvertisement=","client_fraction=","num_rounds=","data_file=","client_sharing="])
+        opts, args = getopt.getopt(argv,"hc:f:b:p:l:q:H:A:df:fr:r:s:",["command=","file=","broker_address=","port=","qos=","HLink=","singleidadvertisement=","client_fraction=","num_rounds=","data_file=","client_sharing="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -1245,7 +1245,7 @@ def main(argv):
     data_file=''
     HLink=''
     qos=0
-    client_sharing=True
+    client_sharing=1
     Forwarding=1
     broker=default_broker_adress
     port=default_broker_port
@@ -1285,8 +1285,8 @@ def main(argv):
             num_rounds = int(arg)
         elif opt in ("-df", "--data_file"):
             data_file = arg
-        elif opt in ("-cs", "--client_sharing"):
-            client_sharing = arg
+        elif opt in ("-s", "--client_sharing"):
+            client_sharing = int(arg)
            
     #Broker location awareness
     locations_file = open("broker_location_awareness.txt", "a+")
@@ -1834,7 +1834,7 @@ def main(argv):
             ]
         }
 
-        server_model_ngsild_filename = ngsild_data['id'][-4:]+'serverModel.ngsild'
+        server_model_ngsild_filename = ngsild_data['id'][-4:]+'_serverModel.ngsild'
 
         # Update NGSI-LD file
         write_ngsild_file(server_model_ngsild_filename, server_model_ngsild_data)
@@ -1864,7 +1864,7 @@ def main(argv):
 
             while not queue.empty():
                 temp_client_model = queue.get()
-                print('iterations', temp_client_model['iteration'], server_training_iteration)
+                print('iterations [recv, server]:', temp_client_model['iteration'], server_training_iteration)
 
                 if temp_client_model['modelType'] != model_type and temp_client_model['modelName'] != model_id:
                     continue
@@ -1988,7 +1988,6 @@ def main(argv):
         
         clientModelIteration = 0
         client_datapoints = len(data_train)
-        first_training_iter = True
 
         # Read NGSI-LD file
         ngsild_data = read_ngsild_file(file)
@@ -2018,7 +2017,7 @@ def main(argv):
             ]
         }
 
-        client_model_ngsild_filename = ngsild_data['id'][-4:]+'clientModel.ngsild'
+        client_model_ngsild_filename = ngsild_data['id'][-4:]+'_clientModel.ngsild'
         
         # Update NGSI-LD file
         write_ngsild_file(client_model_ngsild_filename, client_model_ngsild_data)
@@ -2036,6 +2035,8 @@ def main(argv):
             subscribed_topic = model_id
 
         update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": subscribed_topic})
+
+        print(client_sharing)
 
         if client_sharing: 
             # POST SELF ENTITY
@@ -2063,7 +2064,7 @@ def main(argv):
                     max_server_iter = temp_server_model['iteration']
 
             if server_model:
-                if server_model['iteration'] >= clientModelIteration or first_training_iter:
+                if server_model['iteration'] >= clientModelIteration:
                     clientModelIteration = server_model['iteration']
                     print('Client is training iteration', clientModelIteration)
 
@@ -2083,7 +2084,7 @@ def main(argv):
                         # POST SELF ENTITY
                         post_entity(client_model_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
-                    clientModelIteration += 1
+                    # clientModelIteration += 1
                     first_training_iter = False
                 else:
                     print("No training for this iteration")
