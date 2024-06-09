@@ -1146,8 +1146,12 @@ def usage():
     print("python3 actionhandler.py -c POST/entities -f entity.ngsild -b localhost -p 1026 -q 1 -H HLink -A 0\n")
 
 class Model:
-    def __init__(self, random=True):
-        if random:
+    def __init__(self, weights=None, random=True):
+        if weights:
+            self.fc = np.array(weights)
+            print("Weights used")
+        elif random:
+            print("No weights used")
             self.fc = np.random.randn(10)
         else:
             self.fc = np.zeros((10,))
@@ -1801,8 +1805,6 @@ def main(argv):
 
         data_test = np.array(testing_data, dtype=float)
 
-        global_model = Model()
-
         client_iter_pairs = {}
 
         server_training_iteration = 1
@@ -1811,7 +1813,13 @@ def main(argv):
         ngsild_data = read_ngsild_file(file)
         model_type = ngsild_data['modelType']['value']
         model_id = ngsild_data['modelName']['value']
-        model_weights = ngsild_data['weightSizes']['value']
+        model_weight_sizes = ngsild_data['weightSizes']['value']
+
+        if 'modelWeights' in ngsild_data:
+            model_weights =ngsild_data['modelWeights']['value']
+            global_model = Model(weights=model_weights)
+        else:
+            global_model = Model()
 
         server_model_ngsild_data = {
             "id":model_id, 
@@ -1823,7 +1831,7 @@ def main(argv):
                         ngsild_data['type'],
                         model_id,
                         model_type,
-                        model_weights,
+                        model_weight_sizes,
                         server_training_iteration, 
                         global_model.fc.tolist()
                     ]
@@ -1983,9 +1991,6 @@ def main(argv):
 
         data_train = np.array(training_data, dtype=float)
 
-        client_model = Model()
-        client_model.dataset = data_train
-        
         clientModelIteration = 0
         client_datapoints = len(data_train)
 
@@ -1993,7 +1998,15 @@ def main(argv):
         ngsild_data = read_ngsild_file(file)
         model_type = ngsild_data['modelType']['value']
         model_id = ngsild_data['modelName']['value']
-        model_weights = ngsild_data['weightSizes']['value']
+        model_weight_sizes = ngsild_data['weightSizes']['value']
+
+        if 'modelWeights' in ngsild_data:
+            model_weights =ngsild_data['modelWeights']['value']
+            client_model = Model(weights=model_weights)
+        else:
+            client_model = Model()
+
+        client_model.dataset = data_train
 
         client_model_ngsild_data = {
             "id":model_id, 
@@ -2005,7 +2018,7 @@ def main(argv):
                         ngsild_data['type'],
                         model_id,
                         model_type,
-                        model_weights,
+                        model_weight_sizes,
                         clientModelIteration,
                         client_datapoints,
                         client_model.fc.tolist()
