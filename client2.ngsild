@@ -3,7 +3,7 @@
   "type": "LinRegClient",
   "modelName": {
     "type": "Property",
-    "value": "LinearRegressionTest"
+    "value": "DiabetesLR"
   },
   "modelType": {
     "type": "Property",

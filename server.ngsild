@@ -3,7 +3,7 @@
   "type": "LinRegServer",
   "modelName": {
     "type": "Property",
-    "value": "LinearRegressionTest"
+    "value": "DiabetesLR"
   },
   "modelType": {
     "type": "Property",

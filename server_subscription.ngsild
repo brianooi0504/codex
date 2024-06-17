@@ -4,7 +4,7 @@
   "expires": 60,
   "entities": [
     {
-      "id": "LinearRegressionTest"
+      "id": "DiabetesLR_Global"
     }
   ],
   "watchedAttributes": [
