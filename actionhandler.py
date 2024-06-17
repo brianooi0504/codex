@@ -1811,7 +1811,7 @@ def main(argv):
 
         # Read NGSI-LD file
         ngsild_data = read_ngsild_file(file)
-        model_type = ngsild_data['modelType']['value']
+        model_type = 'FL_'+ngsild_data['modelType']['value']
         model_id = ngsild_data['modelName']['value']
         model_weight_sizes = ngsild_data['weightSizes']['value']
 
@@ -1821,9 +1821,13 @@ def main(argv):
         else:
             global_model = Model()
 
+        post_model_type = model_type+'_Server'
+        post_model_id = model_id+'_Global' # Can change
+        sub_model_id = model_id+'_Global'
+
         server_model_ngsild_data = {
-            "id":model_id, 
-            "type":model_type,
+            "id":post_model_id, 
+            "type":post_model_type,
             "serverModel":{
                 "type": "Property",
                 "value": [
@@ -1849,7 +1853,7 @@ def main(argv):
 
         server_subscription_ngsild_filename = 'server_subscription.ngsild'
         server_sub_ngsild_data = read_ngsild_file(server_subscription_ngsild_filename)
-        update_ngsild_value(server_sub_ngsild_data, server_subscription_ngsild_filename, "entities", 0, 0, {"id": model_id})
+        update_ngsild_value(server_sub_ngsild_data, server_subscription_ngsild_filename, "entities", 0, 0, {"id": sub_model_id})
 
         # POST SELF ENTITY
         # POST GLOBAL MODEL
@@ -1953,10 +1957,10 @@ def main(argv):
                     client_training_ngsild_filename = selected_client[-4:]+'_training.ngsild'
 
                     client_training_ngsild_data = copy.deepcopy(server_model_ngsild_data)
-                    
-                    # write_ngsild_file(client_training_ngsild_filename, client_training_ngsild_data)
 
-                    update_ngsild_value(client_training_ngsild_data, client_training_ngsild_filename, 'id', -1, 0, selected_client[-4:]+'_training')
+                    post_model_id = model_id+'_' + selected_client[-4:] # Can change
+
+                    update_ngsild_value(client_training_ngsild_data, client_training_ngsild_filename, 'id', -1, 0, post_model_id)
 
                     post_entity(client_training_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
@@ -1996,7 +2000,7 @@ def main(argv):
 
         # Read NGSI-LD file
         ngsild_data = read_ngsild_file(file)
-        model_type = ngsild_data['modelType']['value']
+        model_type = 'FL_'+ngsild_data['modelType']['value']
         model_id = ngsild_data['modelName']['value']
         model_weight_sizes = ngsild_data['weightSizes']['value']
 
@@ -2008,9 +2012,13 @@ def main(argv):
 
         client_model.dataset = data_train
 
+        post_model_type = model_type+'_Client'
+        post_model_id = model_id+'_Global'
+        sub_model_id = model_id+'_Global' # Can change
+
         client_model_ngsild_data = {
-            "id":model_id, 
-            "type":model_type,
+            "id":post_model_id, 
+            "type":post_model_type,
             "clientModel":{
                 "type": "Property",
                 "value": [
@@ -2043,11 +2051,11 @@ def main(argv):
         client_subscription_ngsild_filename = ngsild_data['id'][-4:] + '_subscription.ngsild'
 
         if client_sharing:
-            subscribed_topic = ngsild_data['id'][-4:]+'_training'
+            sub_model_id = model_id + '_' + ngsild_data['id'][-4:]
         else:
-            subscribed_topic = model_id
+            sub_model_id = model_id+'_Global'
 
-        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": subscribed_topic})
+        update_ngsild_value(client_sub_ngsild_data, client_subscription_ngsild_filename, "entities", 0, 0, {"id": sub_model_id})
 
         print(client_sharing)
 
@@ -2098,7 +2106,6 @@ def main(argv):
                         post_entity(client_model_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
                     # clientModelIteration += 1
-                    first_training_iter = False
                 else:
                     print("No training for this iteration")
             else:
