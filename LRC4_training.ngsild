@@ -1,0 +1,33 @@
+{
+  "id": "DiabetesLR_LRC4",
+  "type": "FL_LinearRegression_Server",
+  "serverModel": {
+    "type": "Property",
+    "value": [
+      "urn:ngsi-ld:LinRegServer:LRS1",
+      "LinRegServer",
+      "DiabetesLR",
+      "FL_LinearRegression",
+      [
+        10
+      ],
+      6,
+      [
+        28.462894467829138,
+        -0.9420169159557503,
+        -0.7183134516639641,
+        0.008977206371038816,
+        -0.4116094824594497,
+        1.412397041474574,
+        -1.9795667684542948,
+        -0.038829029057083506,
+        1.6611492030314494,
+        0.5104795540174795
+      ]
+    ]
+  },
+  "@context": [
+    "https://smartdatamodels.org/context.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
+  ]
+}

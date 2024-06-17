@@ -1,0 +1,37 @@
+{
+  "id": "urn:ngsi-ld:LinRegServer:LRS1",
+  "type": "LinRegServer",
+  "modelName": {
+    "type": "Property",
+    "value": "LinearRegressionTest"
+  },
+  "modelType": {
+    "type": "Property",
+    "value": "LinearRegression"
+  },
+  "weightSizes": {
+    "type": "Property",
+    "value": [
+        10
+    ]
+  },
+  "modelWeights": {
+    "type": "Property",
+    "value": [
+        65.64157674079708,
+        0.8428495579824391,
+        2.8397084308567107,
+        0.23098417948933608,
+        0.35385406983767975,
+        2.1924438926884298,
+        -1.619795575029509,
+        -0.2717336020870281,
+        0.10665919465986369,
+        -0.7273566624476666
+    ]
+  },
+  "@context": [
+    "https://smartdatamodels.org/context.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
+  ]
+}
