@@ -1806,6 +1806,8 @@ def main(argv):
         data_test = np.array(testing_data, dtype=float)
 
         client_iter_pairs = {}
+        # Model distribution
+        costs = []
 
         server_training_iteration = 1
 
@@ -1846,7 +1848,7 @@ def main(argv):
             ]
         }
 
-        server_model_ngsild_filename = ngsild_data['id'][-4:]+'_serverModel.ngsild'
+        server_model_ngsild_filename = ngsild_data['id'].split(':')[-1]+'_serverModel.ngsild'
 
         # Update NGSI-LD file
         write_ngsild_file(server_model_ngsild_filename, server_model_ngsild_data)
@@ -1895,9 +1897,6 @@ def main(argv):
                 # print('client_iter pairs: ', client_iter_pairs)
 
             if len(client_models) > 0:
-            
-                # Model distribution
-                costs = []
 
                 # AGGREGATE MODEL
                 # Model aggregation
@@ -1954,18 +1953,23 @@ def main(argv):
                 print('selected:', selected_clients)
 
                 for selected_client in selected_clients:
-                    client_training_ngsild_filename = selected_client[-4:]+'_training.ngsild'
+                    client_training_ngsild_filename = selected_client.split(':')[-1]+'_training.ngsild'
 
                     client_training_ngsild_data = copy.deepcopy(server_model_ngsild_data)
 
-                    post_model_id = model_id+'_' + selected_client[-4:] # Can change
+                    post_model_id = model_id+'_' + selected_client.split(':')[-1] # Can change
 
                     update_ngsild_value(client_training_ngsild_data, client_training_ngsild_filename, 'id', -1, 0, post_model_id)
 
                     post_entity(client_training_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
 
-        print(costs)
+        for i in range(num_rounds):
+            print(f'Round {i}: ', costs)
+        
+        print()
+        print('Client - iterations:')
+        print(client_iter_pairs)
 
     #FL CLIENT               
     elif(command == 'FL/Client'):
@@ -2038,7 +2042,7 @@ def main(argv):
             ]
         }
 
-        client_model_ngsild_filename = ngsild_data['id'][-4:]+'_clientModel.ngsild'
+        client_model_ngsild_filename = ngsild_data['id'].split(':')[-1]+'_clientModel.ngsild'
         
         # Update NGSI-LD file
         write_ngsild_file(client_model_ngsild_filename, client_model_ngsild_data)
@@ -2048,10 +2052,10 @@ def main(argv):
 
         client_sub_ngsild_data = copy.deepcopy(sub_ngsild_data)
         
-        client_subscription_ngsild_filename = ngsild_data['id'][-4:] + '_subscription.ngsild'
+        client_subscription_ngsild_filename = ngsild_data['id'].split(':')[-1] + '_subscription.ngsild'
 
         if client_sharing:
-            sub_model_id = model_id + '_' + ngsild_data['id'][-4:]
+            sub_model_id = model_id + '_' + ngsild_data['id'].split(':')[-1]
         else:
             sub_model_id = model_id+'_Global'
 

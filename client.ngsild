@@ -9,10 +9,14 @@
     "type": "Property",
     "value": "LinearRegression"
   },
+  "modelLayers": {
+    "type": "Property",
+    "value": 1
+  },
   "weightSizes": {
     "type": "Property",
     "value": [
-      10
+        10
     ]
   },
   "@context": [
