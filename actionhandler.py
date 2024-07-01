@@ -1964,8 +1964,10 @@ def main(argv):
                     post_entity(client_training_ngsild_data,my_area,broker,port,qos,my_loc,1,client)
 
 
-        for i in range(num_rounds):
-            print(f'Round {i}: ', costs)
+        index = 1
+        for cost_p in costs:
+            print(f'Round {index}: ', cost_p)
+            index += 1
         
         print()
         print('Client - iterations:')
